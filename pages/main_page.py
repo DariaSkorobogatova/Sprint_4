@@ -1,39 +1,25 @@
-from selenium.webdriver.support import expected_conditions as EC
-from selenium.webdriver.support.wait import WebDriverWait
-from locators.main_page_locators import MainPageLocators as l
-from selenium.webdriver.common.by import By
+import allure
+from locators.main_page_locators import MainPageLocators, question_locator, answer_locator
+from pages.base_page import BasePage
 
 
-class MainPage:
-    def __init__(self, driver):
-        self.driver = driver
+class MainPage(BasePage):
+    @allure.step('Кликнуть по вопросу, дождаться появления ответа')
+    def click_question_get_answer(self, id):
+        self.wait_for_loading(question_locator(id))
+        self.scroll_to_element(question_locator(id))
+        self.click_element(question_locator(id))
+        self.wait_for_loading(answer_locator(id))
 
-    def go_to_main_page(self, url):
-        self.driver.get(url)
+    @allure.step('Получить текст ответа')
+    def get_answer_text(self, id):
+        return self.get_element_text(answer_locator(id))
 
-    def get_current_url(self):
-        return self.driver.current_url
+    @allure.step('Кликнуть кнопку "Заказать" в хедере страницы')
+    def click_order_button_in_header(self):
+        self.click_element(MainPageLocators.order_bt_upper)
 
-    def wait_for_main_page_to_load(self):
-        WebDriverWait(self.driver, 10).until(EC.visibility_of_element_located(tuple(l.order_bt_upper)))
-
-    def wait_for_question_block_to_load(self):
-        WebDriverWait(self.driver, 30).until(EC.visibility_of_element_located(tuple(l.questions_block)))
-
-    def scroll_to_question_block(self, id):
-        question_block = self.driver.find_element(By.ID, f"accordion__heading-{id}")
-        self.driver.execute_script("arguments[0].scrollIntoView();", question_block)
-
-    def click_question(self, id):
-        WebDriverWait(self.driver, 3).until(EC.element_to_be_clickable((By.ID, f"accordion__heading-{id}")))
-        self.driver.find_element(By.ID, f"accordion__heading-{id}").click()
-
-    def return_answer_text(self, id):
-        WebDriverWait(self.driver, 3).until(EC.visibility_of_element_located((By.ID, f"accordion__panel-{id}")))
-        return self.driver.find_element(By.XPATH, f".//div[@id='accordion__panel-{id}']/p").text
-
-    def click_order_bt(self):
-        self.driver.find_element(*l.order_bt_upper).click()
-
-
-
+    @allure.step('Кликнуть кнопку "Заказать" в блоке "Как это работает?"')
+    def click_order_button_in_middle(self):
+        self.scroll_to_element(MainPageLocators.order_bt_lower)
+        self.click_element(MainPageLocators.order_bt_lower)

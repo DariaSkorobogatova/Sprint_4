@@ -1,51 +1,45 @@
-from data import Data as data
 import allure
+import pytest
+from data import Data
 from pages.main_page import MainPage
-from pages.cookie_page import CookiePage
-from pages.order_first_page import OrderFirstPage
-from pages.order_second_page import OrderSecondPage
-from pages.want_to_confirm_order_popup_page import ConfirmOrderPage
-from pages.confirmation_order_page import ConfirmationOrderPage
-from pages.general_page import GeneralPage
-from pages.yandex_page import YaPage
+from pages.order_page import OrderPage
+from locators.order_page_locators import OrderPageLocators
 
 
+@allure.feature('Заказ самоката')
 class TestOrderScooter:
-    @allure.title('Проверка заказа самоката и перехода по лого')
-    @allure.description('На главной странице нажимаем Заказать, заполняет форму, подтверждаем заказ, '
-                        'убеждаемся, что подтверждающая заказ форма открылась,'
-                        'убеждаемся, что по клику на лого самоката переходим на главную страницу сервиса'
-                        'убеждаемся, что по клику на лого яндекса переходим на главную страницу яндекса')
-    def test_order_scooter(self, driver):
+    @allure.title('Проверка перехода на страницу заказа по кнопке "Заказать" в хедере')
+    @allure.description('В хедере главной страницы кликнуть на кнопку "Заказать", проверить переход на страницу заказа')
+    def test_header_order_button(self, driver):
         main_page = MainPage(driver)
-        cookie_page = CookiePage(driver)
-        order_page_1 = OrderFirstPage(driver)
-        order_page_2 = OrderSecondPage(driver)
-        confirm_order = ConfirmOrderPage(driver)
-        order_confirmation = ConfirmationOrderPage(driver)
-        general_page = GeneralPage(driver)
-        yandex_page = YaPage(driver)
-        main_page.go_to_main_page(data.url)
-        main_page.wait_for_main_page_to_load()
-        cookie_page.click_agree_cookie()
-        main_page.click_order_bt()
-        order_page_1.enter_name_address_phone_number(data.name, data.surname, data.address, data.phone)
-        order_page_1.choose_metro_station(data.metro_station)
-        order_page_1.click_next_bt()
-        order_page_2.enter_date_duration_colour_msg(data.date, data.msg)
-        order_page_2.click_order_bt()
-        confirm_order.wait_for_popup()
-        confirm_order.click_yes_bt()
-        assert order_confirmation.order_is_confirmed_popup()
-        order_confirmation.see_status_bt()
-        general_page.click_scooter_logo()
-        main_page.wait_for_main_page_to_load()
-        assert main_page.get_current_url() == 'https://qa-scooter.praktikum-services.ru/'
-        general_page.click_yandex_logo()
-        general_page.windows_switch()
-        yandex_page.wait_for_search_bt()
-        assert main_page.get_current_url() == 'https://dzen.ru/?yredirect=true'
+        order_page = OrderPage(driver)
+        main_page.go_to_page(Data.url_main)
+        main_page.click_order_button_in_header()
+        opened_page = order_page.get_current_url()
+        assert opened_page == Data.url_order, f'Вместо {Data.url_order} отображается {opened_page}'
 
+    @allure.title('Проверка перехода на страницу заказа по кнопке "Заказать" в блоке "Как это работает?"')
+    @allure.description('В блоке "Как это работает?" главной страницы кликнуть на кнопку "Заказать", проверить '
+                        'переход на страницу заказа')
+    def test_middle_order_button(self, driver):
+        main_page = MainPage(driver)
+        order_page = OrderPage(driver)
+        main_page.go_to_page(Data.url_main)
+        main_page.click_order_button_in_middle()
+        opened_page = order_page.get_current_url()
+        assert opened_page == Data.url_order, f'Вместо {Data.url_order} отображается {opened_page}'
+
+    @allure.title('Проверка оформления заказа самоката')
+    @allure.description('На странице заказа заполнить форму и проверить, что появился попап с кнопкой "Посмотреть статус"')
+    @pytest.mark.parametrize('name, surname, address, metro, phone, message', Data.data_for_order_test)
+    def test_order_scooter(self, driver, name, surname, address, metro, phone, message):
+        main_page = MainPage(driver)
+        order_page = OrderPage(driver)
+        main_page.go_to_page(Data.url_order)
+        order_page.fill_data_on_first_order_page(name, surname, address, metro, phone)
+        order_page.fill_data_on_second_order_page(message)
+        order_page.click_yes_button()
+        assert order_page.element_is_enabled(OrderPageLocators.see_status_bt), 'Кнопка "Посмотреть статус" не найдена'
 
 
 
